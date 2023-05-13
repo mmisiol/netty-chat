@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 public enum Command {
@@ -15,7 +14,8 @@ public enum Command {
     LEAVE(array("leave"), "- leave the current channel"),
     DISCONNECT(array("disconnect", "dc"), "disconnect from the chat"),
     LIST(array("list", "ls"), "List available channels"),
-    USERS(array("users", "u"), "List active users in the current channel");
+    USERS(array("users", "u"), "List active users in the current channel"),
+    MESSAGE(array(), "Send message to all users in the channel");;
 
     private final static String PREFIX = "/";
     private final static Map<String, Command> MAPPINGS = new HashMap<>();
@@ -36,9 +36,9 @@ public enum Command {
         return Arrays.asList(strings).toArray(new String[0]);
     }
 
-    public static Optional<Command> parseCommand(String message) {
+    public static Command parseCommand(String message) {
         String[] words = message.split("\\s+");
         String firstWord = words[0];
-        return Optional.ofNullable(MAPPINGS.get(firstWord.toLowerCase()));
+        return MAPPINGS.getOrDefault(firstWord.toLowerCase(), MESSAGE);
     }
 }
