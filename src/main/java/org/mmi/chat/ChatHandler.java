@@ -29,6 +29,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         switch (Command.parseCommand(message)) {
             case LOGIN -> handleLogin(ctx, message);
             case JOIN -> handleJoin(ctx, message);
+            case LEAVE -> handleLeave(ctx);
             case HELP -> serverWrite(ctx, Command.help());
             case MESSAGE -> sendMessage(ctx, message);
             default -> serverWrite(ctx, "Unsupported operation");
@@ -118,12 +119,27 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         user.setLastJoinedRoom(roomName);
         usersRepository.save(user);
 
-        StringBuilder output = new StringBuilder(SERVER_PREFIX + " joined room:" + roomName + "\r\n");
+        StringBuilder output = new StringBuilder(SERVER_PREFIX + " joined room:" + roomName + LINE_END);
 
         List<String> messageHistory = roomHistory.getMessageHistory(roomName);
 
         messageHistory.forEach(output::append);
         ctx.channel().writeAndFlush(output.toString());
+    }
+
+    private void handleLeave(ChannelHandlerContext ctx) {
+        if (!ensureLoggedIn(ctx)) {
+            return;
+        }
+        if (this.room == null) {
+            serverWrite(ctx, "Not in a room");
+            return;
+        }
+
+        Room room = this.room;
+        this.room.leave(ctx.channel());
+        this.room = null;
+        serverWrite(ctx, "Left room:" + room.getName());
     }
 
 
@@ -143,13 +159,13 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
 
     private boolean ensureLoggedIn(ChannelHandlerContext ctx) {
         if (this.name == null) {
-            serverWrite(ctx, "login using /login first\n\r");
+            serverWrite(ctx, "login using /login first");
             return false;
         }
         return true;
     }
 
     private void serverWrite(ChannelHandlerContext ctx, String message) {
-        ctx.channel().writeAndFlush(SERVER_PREFIX + " " + message + "\n\r");
+        ctx.channel().writeAndFlush(SERVER_PREFIX + " " + message + LINE_END);
     }
 }
