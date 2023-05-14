@@ -32,6 +32,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             case JOIN -> handleJoin(ctx, message);
             case LEAVE -> handleLeave(ctx);
             case LIST -> handleList(ctx);
+            case USERS -> handleUsers(ctx);
             case HELP -> serverWrite(ctx, Command.help());
             case MESSAGE -> sendMessage(ctx, message);
             default -> serverWrite(ctx, "Unsupported operation");
@@ -69,6 +70,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         if (user != null) {
             if (hasher.checkPassword(password, user.getPasswordHash())) {
                 this.name = name;
+                ctx.channel().attr(Const.NAME).set(name);
                 serverWrite(ctx, "Logged in as user: " + name);
             } else {
                 serverWrite(ctx, "Incorrect user or password");
@@ -79,6 +81,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             user.setPasswordHash(hasher.hashNewPassword(password));
             usersRepository.save(user);
             this.name = name;
+            ctx.channel().attr(Const.NAME).set(name);
             serverWrite(ctx, "Created user: " + name);
         }
 
@@ -158,6 +161,21 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             output.append(rooms.keySet().stream().sorted().collect(Collectors.joining(LINE_END)));
             serverWrite(ctx, output.toString());
         }
+    }
+
+    private void handleUsers(ChannelHandlerContext ctx) {
+        if (needsLogin(ctx)) {
+            return;
+        }
+        if (this.room == null) {
+            serverWrite(ctx, "you have to first join a channel using /join <channel> ");
+            return;
+        }
+
+        StringBuilder output = new StringBuilder("Users in the room: " + room.getName() + LINE_END);
+        output.append(this.room.listUsers().stream().collect(Collectors.joining(LINE_END)));
+
+        serverWrite(ctx, output.toString());
     }
 
 

@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class Room {
@@ -41,6 +43,13 @@ public class Room {
                 client.writeAndFlush("[" + name + "]" + message);
             }
         }
+    }
+
+    public List<String> listUsers() {
+        return clients.stream().map(channel -> channel.attr(Const.NAME).get())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 }
 
