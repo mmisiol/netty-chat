@@ -7,5 +7,5 @@ public class User {
 
     private String name;
     private String passwordHash;
-    private String lastChannel;
+    private String lastJoinedRoom;
 }

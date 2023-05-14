@@ -34,7 +34,7 @@ public enum Command {
     private final String description;
 
     private static String[] array(String... strings) {
-        return Arrays.asList(strings).toArray(new String[0]);
+        return strings.clone();
     }
 
     public static Command parseCommand(String message) {

@@ -19,12 +19,10 @@ public class ChatServer {
         EventLoopGroup masterGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(masterGroup, workerGroup);
         serverBootstrap.channel(NioServerSocketChannel.class);
         serverBootstrap.childHandler(new ChatInitializer());
-
 
         try {
             serverBootstrap.bind(port).sync().channel().closeFuture().sync();
@@ -32,7 +30,5 @@ public class ChatServer {
             masterGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-
-
     }
 }

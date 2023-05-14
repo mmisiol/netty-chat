@@ -4,3 +4,8 @@
 * exception handling
 * more sophisticated message format - protocol buffers?
 * names are case-insensitive
+* spin lock should also be accompanied by an exponential backoff
+* I call the "channels" joinable by users "rooms" to differentiate from netty channels
+* lock only relevant resources
+* map of groups nope
+* Instance of handler per channel
