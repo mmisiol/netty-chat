@@ -5,17 +5,18 @@ import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public enum Command {
-    HELP(array("help", "h"), " - lists available commands"),
+    HELP(array("help", "h"), "               - lists available commands"),
     LOGIN(array("login"), "<name> <password> - logs in or creates a new user"),
-    JOIN(array("join", "j"), "<channel> - joins channel"),
-    LEAVE(array("leave"), "- leave the current channel"),
-    DISCONNECT(array("disconnect", "dc"), "disconnect from the chat"),
-    LIST(array("list", "ls"), "List available channels"),
-    USERS(array("users", "u"), "List active users in the current channel"),
-    MESSAGE(array(), "Send message to all users in the channel");;
+    JOIN(array("join", "j"), "<channel>      - joins channel"),
+    LEAVE(array("leave"), "                  - leave the current channel"),
+    DISCONNECT(array("disconnect", "dc"), "        - disconnect from the chat"),
+    LIST(array("list", "ls"), "              - list available channels"),
+    USERS(array("users", "u"), "              - list active users in the current channel"),
+    MESSAGE(array(), "<message>               - send message to all users in the channel");
 
     private final static String PREFIX = "/";
     private final static Map<String, Command> MAPPINGS = new HashMap<>();
@@ -40,5 +41,22 @@ public enum Command {
         String[] words = message.split("\\s+");
         String firstWord = words[0];
         return MAPPINGS.getOrDefault(firstWord.toLowerCase(), MESSAGE);
+    }
+
+    public static String help() {
+        StringBuilder help = new StringBuilder();
+        help.append("\n\r");
+        for (Command command : values()) {
+            String commands = Arrays.stream(command.chatCommands)
+                    .map(com -> PREFIX + com)
+                    .collect(Collectors.joining(", "));
+
+            help.append(commands)
+                    .append(" ")
+                    .append(command.description)
+                    .append("\n\r");
+        }
+
+        return help.toString();
     }
 }

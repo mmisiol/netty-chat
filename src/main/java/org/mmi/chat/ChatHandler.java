@@ -24,6 +24,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
 
         switch (Command.parseCommand(message)) {
             case LOGIN -> handleLogin(ctx, message);
+            case HELP -> serverWrite(ctx, Command.help());
             default -> serverWrite(ctx, "Unsupported operation");
         }
     }
