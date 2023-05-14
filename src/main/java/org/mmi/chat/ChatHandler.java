@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.mmi.chat.Const.LINE_END;
 
@@ -30,6 +31,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             case LOGIN -> handleLogin(ctx, message);
             case JOIN -> handleJoin(ctx, message);
             case LEAVE -> handleLeave(ctx);
+            case LIST -> handleList(ctx);
             case HELP -> serverWrite(ctx, Command.help());
             case MESSAGE -> sendMessage(ctx, message);
             default -> serverWrite(ctx, "Unsupported operation");
@@ -41,9 +43,10 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         if (room != null) {
             room.leave(ctx.channel());
         }
+        room = null;
     }
 
-    private synchronized void handleLogin(ChannelHandlerContext ctx, String message) {
+    private void handleLogin(ChannelHandlerContext ctx, String message) {
         if (this.name != null) {
             serverWrite(ctx, "Already logged in as: " + this.name);
             return;
@@ -85,8 +88,8 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
 
     }
 
-    private synchronized void handleJoin(ChannelHandlerContext ctx, String message) {
-        if (!ensureLoggedIn(ctx)) {
+    private void handleJoin(ChannelHandlerContext ctx, String message) {
+        if (needsLogin(ctx)) {
             return;
         }
 
@@ -99,7 +102,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         joinRoom(ctx, channelName);
     }
 
-    private synchronized void joinRoom(ChannelHandlerContext ctx, String roomName) {
+    private void joinRoom(ChannelHandlerContext ctx, String roomName) {
         Room newRoom = rooms.computeIfAbsent(roomName, name -> new Room(roomName, roomHistory));
         if (newRoom.equals(this.room)) {
             serverWrite(ctx, "Already in channel: " + roomName);
@@ -128,7 +131,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void handleLeave(ChannelHandlerContext ctx) {
-        if (!ensureLoggedIn(ctx)) {
+        if (needsLogin(ctx)) {
             return;
         }
         if (this.room == null) {
@@ -142,9 +145,24 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         serverWrite(ctx, "Left room:" + room.getName());
     }
 
+    private void handleList(ChannelHandlerContext ctx) {
+        if (needsLogin(ctx)) {
+            return;
+        }
+
+        if (rooms.isEmpty()) {
+            serverWrite(ctx, "No rooms available");
+        } else {
+            StringBuilder output = new StringBuilder("Available rooms:");
+            output.append(LINE_END);
+            output.append(rooms.keySet().stream().sorted().collect(Collectors.joining(LINE_END)));
+            serverWrite(ctx, output.toString());
+        }
+    }
+
 
     private void sendMessage(ChannelHandlerContext ctx, String message) {
-        if (!ensureLoggedIn(ctx)) {
+        if (needsLogin(ctx)) {
             return;
         }
 
@@ -157,12 +175,12 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         this.room.broadcast(ctx.channel(), output);
     }
 
-    private boolean ensureLoggedIn(ChannelHandlerContext ctx) {
+    private boolean needsLogin(ChannelHandlerContext ctx) {
         if (this.name == null) {
             serverWrite(ctx, "login using /login first");
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private void serverWrite(ChannelHandlerContext ctx, String message) {
