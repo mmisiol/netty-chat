@@ -35,9 +35,11 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             case USERS -> handleUsers(ctx);
             case HELP -> serverWrite(ctx, Command.help());
             case MESSAGE -> sendMessage(ctx, message);
+            case DISCONNECT -> handleDisconnect(ctx);
             default -> serverWrite(ctx, "Unsupported operation");
         }
     }
+
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -176,6 +178,11 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
         output.append(this.room.listUsers().stream().collect(Collectors.joining(LINE_END)));
 
         serverWrite(ctx, output.toString());
+    }
+
+    private void handleDisconnect(ChannelHandlerContext ctx) {
+        serverWrite(ctx,"bye bye");
+        ctx.channel().close();
     }
 
 
