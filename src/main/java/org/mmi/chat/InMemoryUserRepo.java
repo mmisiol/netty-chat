@@ -7,9 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryUserRepo implements UsersRepository {
 
-    /*I really don't want to check if name locking is enough to protect
-    regular HashMap from breaking.
-     */
     private final Map<String, User> users = new ConcurrentHashMap<>();
 
     @Override

@@ -45,7 +45,7 @@ public enum Command {
 
     public static String help() {
         StringBuilder help = new StringBuilder();
-        help.append("\n\r");
+        help.append(Const.LINE_END);
         for (Command command : values()) {
             String commands = Arrays.stream(command.chatCommands)
                     .map(com -> PREFIX + com)
@@ -54,7 +54,7 @@ public enum Command {
             help.append(commands)
                     .append(" ")
                     .append(command.description)
-                    .append("\n\r");
+                    .append(Const.LINE_END);
         }
 
         return help.toString();

@@ -1,12 +1,13 @@
 package org.mmi.chat;
 
 import io.netty.channel.Channel;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
@@ -14,14 +15,14 @@ import java.util.stream.Collectors;
 public class Room {
 
     private final static int MAX_CLIENTS = 10;
-    private final Set<Channel> clients = new HashSet<>();
+    private final ChannelGroup clients = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     private final Semaphore maxClients = new Semaphore(MAX_CLIENTS);
 
     @Getter
     private final String name;
 
     @Getter
-    private final RoomHistory history;
+    private final MessageHistory history;
 
     public boolean join(Channel client) {
         boolean joined = maxClients.tryAcquire();
@@ -38,11 +39,8 @@ public class Room {
 
     public void broadcast(Channel sender, String message) {
         history.put(name, message);
-        for (Channel client : clients) {
-            if (client != sender) {
-                client.writeAndFlush("[" + name + "]" + message);
-            }
-        }
+        String output = "[" + name + "]" + message;
+        clients.writeAndFlush(output, channel -> channel != sender);
     }
 
     public List<String> listUsers() {

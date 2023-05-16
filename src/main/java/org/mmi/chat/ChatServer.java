@@ -1,6 +1,7 @@
 package org.mmi.chat;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -11,7 +12,8 @@ public class ChatServer {
     private final int port;
 
     public static void main(String[] args) throws Exception {
-        new ChatServer(8080).start();
+        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8080;
+        new ChatServer(port).start();
     }
 
 
@@ -25,7 +27,15 @@ public class ChatServer {
         serverBootstrap.childHandler(new ChatInitializer());
 
         try {
-            serverBootstrap.bind(port).sync().channel().closeFuture().sync();
+            ChannelFuture future = serverBootstrap.bind(port).sync();
+            future.addListener(f -> {
+                if (f.isSuccess()) {
+                    System.out.println("Listening on port: " + port);
+                } else {
+                    System.out.println("Failed to start");
+                }
+            });
+            future.channel().closeFuture().sync();
         } finally {
             masterGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();

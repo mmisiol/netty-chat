@@ -1,9 +1,19 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
-group 'org.example'
+group 'org.mmi'
 version '1.0-SNAPSHOT'
+
+apply plugin: "java"
+ext {
+    javaMainClass = "org.mmi.chat.ChatServer"
+}
+
+application {
+    mainClassName = javaMainClass
+}
 
 repositories {
     mavenCentral()

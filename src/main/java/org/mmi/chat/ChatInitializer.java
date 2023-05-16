@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatInitializer extends ChannelInitializer<SocketChannel> {
 
     private final UsersRepository usersRepository = new InMemoryUserRepo();
-    private final RoomHistory roomHistory = new RoomHistory();
+    private final MessageHistory messageHistory = new InMemoryMessageHistory();
 
     private final Map<String, Room> rooms = new ConcurrentHashMap<>();
 
@@ -24,6 +24,6 @@ public class ChatInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
-        pipeline.addLast(new ChatHandler(new PasswordHasher(), usersRepository, roomHistory, rooms));
+        pipeline.addLast(new ChatHandler(new PasswordHasher(), usersRepository, messageHistory, rooms));
     }
 }

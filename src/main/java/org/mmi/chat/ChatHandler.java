@@ -15,7 +15,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
     private static final String SERVER_PREFIX = "[SERVER]";
     private final PasswordHasher hasher;
     private final UsersRepository usersRepository;
-    private final RoomHistory roomHistory;
+    private final MessageHistory messageHistory;
 
     private final Map<String, Room> rooms;
 
@@ -24,7 +24,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
 
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public synchronized void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         String message = (String) msg;
 
         switch (Command.parseCommand(message)) {
@@ -47,6 +47,11 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
             room.leave(ctx.channel());
         }
         room = null;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        serverWrite(ctx, "Welcome! Use /h for help!");
     }
 
     private void handleLogin(ChannelHandlerContext ctx, String message) {
@@ -108,7 +113,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void joinRoom(ChannelHandlerContext ctx, String roomName) {
-        Room newRoom = rooms.computeIfAbsent(roomName, name -> new Room(roomName, roomHistory));
+        Room newRoom = rooms.computeIfAbsent(roomName, name -> new Room(roomName, messageHistory));
         if (newRoom.equals(this.room)) {
             serverWrite(ctx, "Already in channel: " + roomName);
             return;
@@ -129,7 +134,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
 
         StringBuilder output = new StringBuilder(SERVER_PREFIX + " joined room:" + roomName + LINE_END);
 
-        List<String> messageHistory = roomHistory.getMessageHistory(roomName);
+        List<String> messageHistory = this.messageHistory.latest(roomName, 5);
 
         messageHistory.forEach(output::append);
         ctx.channel().writeAndFlush(output.toString());
@@ -181,7 +186,7 @@ public class ChatHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void handleDisconnect(ChannelHandlerContext ctx) {
-        serverWrite(ctx,"bye bye");
+        serverWrite(ctx, "bye bye");
         ctx.channel().close();
     }
 

@@ -5,29 +5,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RoomHistory {
+public class InMemoryMessageHistory implements MessageHistory {
 
-    private final static int SIZE = 5;
+    private final static int MAX_SIZE = 10;
 
     private final static Map<String, Object> MONITORS = new ConcurrentHashMap<>();
 
     private final Map<String, LinkedList<String>> channelLists = new ConcurrentHashMap<>();
 
+    @Override
     public void put(String channel, String message) {
         Object monitor = MONITORS.computeIfAbsent(channel, c -> new Object());
         synchronized (monitor) {
             LinkedList<String> messages = channelLists.computeIfAbsent(channel, c -> new LinkedList<>());
             messages.addLast(message);
-            while (messages.size() > SIZE) {
+            while (messages.size() > MAX_SIZE) {
                 messages.removeFirst();
             }
         }
     }
 
-    public List<String> getMessageHistory(String channel) {
+    @Override
+    public List<String> latest(String channel, int length) {
         Object monitor = MONITORS.computeIfAbsent(channel, c -> new Object());
         synchronized (monitor) {
-            return new LinkedList<>(channelLists.computeIfAbsent(channel, c -> new LinkedList<>()));
+            List<String> history = channelLists.computeIfAbsent(channel, c -> new LinkedList<>());
+            int from = Math.max(0, history.size() - length);
+            int to = history.size();
+            return history.subList(from, to);
         }
     }
 }
